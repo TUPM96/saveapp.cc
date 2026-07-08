@@ -94,6 +94,14 @@ function appPath(app) {
   return `/apps/${app.slug}`;
 }
 
+const numberFormatter = new Intl.NumberFormat('vi-VN');
+
+function installLabel(app) {
+  return app.installCount > 0 ? numberFormatter.format(app.installCount) : '—';
+}
+
+const currentYear = new Date().getFullYear();
+
 function navigate(path) {
   const target = normalizePath(path);
   window.history.pushState({}, '', withBase(target));
@@ -117,7 +125,8 @@ function pageMeta() {
       title: `${app.name} - ${app.category} | ${site.name}`,
       description: app.description,
       url: `${siteUrl}${appPath(app)}`,
-      image: `${siteUrl}${app.icon}`,
+      image: `${siteUrl}/og/${app.slug}.png`,
+      imageAlt: `${app.name} - ${app.tagline}`,
       robots: 'index, follow',
       schema: softwareSchema(app)
     };
@@ -129,7 +138,8 @@ function pageMeta() {
       ? site.description
       : 'Ứng dụng này chưa có trong danh sách hiện tại của SaveApp.cc.',
     url: isHome.value ? `${siteUrl}/` : `${siteUrl}${currentPath.value}`,
-    image: `${siteUrl}/app-icons/koi.svg`,
+    image: `${siteUrl}/og/home.png`,
+    imageAlt: `${site.name} - Danh sách ứng dụng đang phát triển`,
     robots: isHome.value ? 'index, follow' : 'noindex, follow',
     schema: isHome.value ? itemListSchema() : webPageSchema()
   };
@@ -210,6 +220,7 @@ function updateSeo() {
   setMeta('meta[property="og:description"]', 'content', meta.description);
   setMeta('meta[property="og:url"]', 'content', meta.url);
   setMeta('meta[property="og:image"]', 'content', meta.image);
+  setMeta('meta[property="og:image:alt"]', 'content', meta.imageAlt || meta.title);
   setMeta('meta[name="twitter:title"]', 'content', meta.title);
   setMeta('meta[name="twitter:description"]', 'content', meta.description);
   setMeta('meta[name="twitter:image"]', 'content', meta.image);
@@ -238,7 +249,7 @@ watch([currentPath, selectedApp], updateSeo);
   <div class="shell">
     <header class="site-header">
       <a class="brand" :href="withBase('/')" @click="onInternalLink($event, '/')">
-        <img class="brand-mark" :src="assetUrl('/app-icons/koi.svg')" alt="" />
+        <img class="brand-mark" :src="assetUrl('/favicon.svg')" alt="" />
         <span>
           <strong>SaveApp.cc</strong>
           <small>App catalog</small>
@@ -311,8 +322,8 @@ watch([currentPath, selectedApp], updateSeo);
                 <p>{{ app.packageName }}</p>
               </div>
             </div>
-            <div class="app-cell metric" role="cell">
-              <span>{{ app.installCount }}</span>
+            <div class="app-cell metric" :class="{ 'metric-empty': app.installCount === 0 }" role="cell">
+              <span>{{ installLabel(app) }}</span>
             </div>
             <div class="app-cell" role="cell">
               <span class="status-pill" :class="app.statusTone">{{ app.status }}</span>
@@ -401,7 +412,7 @@ watch([currentPath, selectedApp], updateSeo);
               </div>
               <div>
                 <dt>Người dùng</dt>
-                <dd>{{ selectedApp.installCount }}</dd>
+                <dd>{{ installLabel(selectedApp) }}</dd>
               </div>
               <div>
                 <dt>Cập nhật</dt>
@@ -445,5 +456,22 @@ watch([currentPath, selectedApp], updateSeo);
         </a>
       </section>
     </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <a class="footer-brand" :href="withBase('/')" @click="onInternalLink($event, '/')">
+          <img :src="assetUrl('/favicon.svg')" alt="" />
+          <span>
+            <strong>SaveApp.cc</strong>
+            <small>{{ site.owner }}</small>
+          </span>
+        </a>
+        <nav class="footer-links" aria-label="Liên kết chân trang">
+          <a :href="withBase('/')" @click="onInternalLink($event, '/')">Ứng dụng</a>
+          <a :href="`mailto:${site.email}`">{{ site.email }}</a>
+          <span>© {{ currentYear }} {{ site.owner }}</span>
+        </nav>
+      </div>
+    </footer>
   </div>
 </template>

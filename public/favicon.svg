@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="SaveApp.cc">
+  <defs>
+    <linearGradient id="sa" x1="10" x2="86" y1="6" y2="90" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2dd4bf"/>
+      <stop offset=".55" stop-color="#0f766e"/>
+      <stop offset="1" stop-color="#1e3a8a"/>
+    </linearGradient>
+  </defs>
+  <rect width="96" height="96" rx="22" fill="url(#sa)"/>
+  <path d="M36 22h24a6 6 0 0 1 6 6v46a2 2 0 0 1-3.2 1.6L48 64.5 33.2 75.6A2 2 0 0 1 30 74V28a6 6 0 0 1 6-6Z" fill="#fff"/>
+  <path d="m41 45 5.2 5.2L57 39.4" fill="none" stroke="#0f766e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

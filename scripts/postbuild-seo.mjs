@@ -13,7 +13,8 @@ const homeMeta = {
   title: `${site.name} - Danh sách ứng dụng`,
   description: site.description,
   url: `${siteUrl}/`,
-  image: `${siteUrl}/app-icons/koi.svg`,
+  image: `${siteUrl}/og/home.png`,
+  imageAlt: `${site.name} - Danh sách ứng dụng đang phát triển`,
   robots: 'index, follow',
   schema: {
     '@context': 'https://schema.org',
@@ -36,7 +37,8 @@ for (const app of apps) {
     title: `${app.name} - ${app.category} | ${site.name}`,
     description: app.description,
     url: `${siteUrl}/apps/${app.slug}`,
-    image: `${siteUrl}${app.icon}`,
+    image: `${siteUrl}/og/${app.slug}.png`,
+    imageAlt: `${app.name} - ${app.tagline}`,
     robots: 'index, follow',
     schema: {
       '@context': 'https://schema.org',
@@ -71,7 +73,8 @@ await writeFile(
     title: `Không tìm thấy ứng dụng | ${site.name}`,
     description: 'Ứng dụng này chưa có trong danh sách hiện tại của SaveApp.cc.',
     url: `${siteUrl}/404`,
-    image: `${siteUrl}/app-icons/koi.svg`,
+    image: `${siteUrl}/og/home.png`,
+    imageAlt: `${site.name} - Danh sách ứng dụng`,
     robots: 'noindex, follow',
     schema: {
       '@context': 'https://schema.org',
@@ -91,6 +94,9 @@ function injectSeo(html, meta) {
   output = replaceMeta(output, 'property', 'og:description', meta.description);
   output = replaceMeta(output, 'property', 'og:url', meta.url);
   output = replaceMeta(output, 'property', 'og:image', meta.image);
+  if (meta.imageAlt) {
+    output = replaceMeta(output, 'property', 'og:image:alt', meta.imageAlt);
+  }
   output = replaceMeta(output, 'name', 'twitter:title', meta.title);
   output = replaceMeta(output, 'name', 'twitter:description', meta.description);
   output = replaceMeta(output, 'name', 'twitter:image', meta.image);
