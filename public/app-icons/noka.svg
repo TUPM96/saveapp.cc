@@ -1,8 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
-  <title>Noka app icon</title>
-  <rect width="96" height="96" rx="18" fill="#e5e7eb"/>
-  <path d="M29 63c2-13 10-22 19-22s17 9 19 22H29Z" fill="#f8fafc" stroke="#9ca3af" stroke-width="4"/>
-  <path d="M35 35 26 24M61 35l9-11" stroke="#9ca3af" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="40" cy="55" r="3" fill="#9ca3af"/>
-  <circle cx="56" cy="55" r="3" fill="#9ca3af"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="title" role="img" viewBox="0 0 96 96"><title>Noka app icon</title><rect width="96" height="96" fill="#e5e7eb" rx="18"/><path fill="#f8fafc" stroke="#9ca3af" stroke-width="4" d="M29 63c2-13 10-22 19-22s17 9 19 22H29Z"/><path stroke="#9ca3af" stroke-linecap="round" stroke-width="4" d="M35 35 26 24M61 35l9-11"/><circle cx="40" cy="55" r="3" fill="#9ca3af"/><circle cx="56" cy="55" r="3" fill="#9ca3af"/></svg>
