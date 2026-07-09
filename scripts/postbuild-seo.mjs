@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { apps, site } from '../src/data/apps.js';
+import { posts } from '../src/data/posts.js';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const distDir = join(root, '..', 'dist');
@@ -65,6 +66,59 @@ for (const app of apps) {
 
   await mkdir(routeDir, { recursive: true });
   await writeFile(join(routeDir, 'index.html'), injectSeo(sourceHtml, appMeta));
+}
+
+const blogDir = join(distDir, 'blog');
+await mkdir(blogDir, { recursive: true });
+await writeFile(
+  join(blogDir, 'index.html'),
+  injectSeo(sourceHtml, {
+    title: `Bài viết | ${site.name}`,
+    description: `Cập nhật tiến độ, thông báo thử nghiệm và câu chuyện sản phẩm của ${site.owner}.`,
+    url: `${siteUrl}/blog`,
+    image: `${siteUrl}/og/blog.png`,
+    imageAlt: `Bài viết | ${site.name}`,
+    robots: 'index, follow',
+    schema: {
+      '@context': 'https://schema.org',
+      '@type': 'Blog',
+      name: `Bài viết | ${site.name}`,
+      url: `${siteUrl}/blog`,
+      blogPost: posts.map((post) => ({
+        '@type': 'BlogPosting',
+        headline: post.title,
+        url: `${siteUrl}/blog/${post.slug}`,
+        datePublished: post.dateMachine
+      }))
+    }
+  })
+);
+
+for (const post of posts) {
+  const postDir = join(blogDir, post.slug);
+  const postMeta = {
+    title: `${post.title} | ${site.name}`,
+    description: post.excerpt,
+    url: `${siteUrl}/blog/${post.slug}`,
+    image: `${siteUrl}/og/blog-${post.slug}.png`,
+    imageAlt: post.title,
+    robots: 'index, follow',
+    schema: {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: post.title,
+      description: post.excerpt,
+      url: `${siteUrl}/blog/${post.slug}`,
+      image: `${siteUrl}/og/blog-${post.slug}.png`,
+      datePublished: post.dateMachine,
+      dateModified: post.dateMachine,
+      author: { '@type': 'Organization', name: site.owner, url: siteUrl },
+      publisher: { '@type': 'Organization', name: site.owner, url: siteUrl }
+    }
+  };
+
+  await mkdir(postDir, { recursive: true });
+  await writeFile(join(postDir, 'index.html'), injectSeo(sourceHtml, postMeta));
 }
 
 await writeFile(
@@ -135,7 +189,9 @@ function replaceCanonical(html, url) {
 function buildSitemap() {
   const routes = [
     { path: '/', lastmod: latestDate(apps.map((app) => app.updatedAtMachine)) },
-    ...apps.map((app) => ({ path: `/apps/${app.slug}`, lastmod: app.updatedAtMachine }))
+    ...apps.map((app) => ({ path: `/apps/${app.slug}`, lastmod: app.updatedAtMachine })),
+    { path: '/blog', lastmod: latestDate(posts.map((post) => post.dateMachine)) },
+    ...posts.map((post) => ({ path: `/blog/${post.slug}`, lastmod: post.dateMachine }))
   ];
   const urls = routes
     .map(

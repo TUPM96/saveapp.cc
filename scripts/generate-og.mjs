@@ -9,9 +9,11 @@ import { existsSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { apps, site } from '../src/data/apps.js';
+import { posts } from '../src/data/posts.js';
 
 const run = promisify(execFile);
 const root = dirname(fileURLToPath(import.meta.url));
+const publicDir = join(root, '..', 'public');
 const iconsDir = join(root, '..', 'public', 'app-icons');
 const outDir = join(root, '..', 'public', 'og');
 const tmpDir = join(root, '..', '.og-tmp');
@@ -183,6 +185,106 @@ async function homeCardHtml() {
   </body></html>`;
 }
 
+async function fileSvg(relPath) {
+  const svg = await readFile(join(publicDir, relPath.replace(/^\//, '')), 'utf8');
+  return svg.replace(/<title>[\s\S]*?<\/title>/i, '');
+}
+
+function postCardHtml(post, icon) {
+  const len = post.title.length;
+  const h1Size = len <= 22 ? 58 : len <= 40 ? 48 : 40;
+  return `<!doctype html><html><head><meta charset="utf-8"><style>${baseStyles}
+    .wrap { position: absolute; left: 0; right: 0; top: 148px; bottom: 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 96px; gap: 60px; }
+    .left { max-width: 660px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: 20px;
+      font-weight: 700; color: #5eead4; text-transform: uppercase; letter-spacing: 1.5px;
+      margin-bottom: 22px; }
+    .eyebrow .dot { width: 10px; height: 10px; border-radius: 50%; background: #34d399;
+      box-shadow: 0 0 16px #34d399; }
+    h1 { font-size: ${h1Size}px; line-height: 1.12; font-weight: 800;
+      letter-spacing: -1px; margin-bottom: 22px;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+      overflow: hidden; }
+    .excerpt { font-size: 24px; line-height: 1.45; color: #cbd5e1; font-weight: 500;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; }
+    .meta { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
+    .pill { font-size: 19px; font-weight: 700; padding: 11px 20px; border-radius: 999px;
+      background: rgba(148,163,184,.12); border: 1px solid rgba(148,163,184,.24);
+      color: #e2e8f0; }
+    .iconwrap { flex: 0 0 auto; width: 260px; height: 260px; border-radius: 56px;
+      background: linear-gradient(160deg, rgba(255,255,255,.14), rgba(255,255,255,.03));
+      border: 1px solid rgba(255,255,255,.14); display: flex; align-items: center;
+      justify-content: center; box-shadow: 0 40px 90px rgba(0,0,0,.5); }
+    .iconwrap svg { width: 160px; height: 160px; border-radius: 36px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.45); }
+  </style></head><body>
+    <div class="grid-bg"></div>
+    <div class="brandbar">
+      <div class="logo">${brandLogo}</div>
+      <div class="name"><b>SaveApp</b>.cc<small>Blog</small></div>
+    </div>
+    <div class="wrap">
+      <div class="left">
+        <div class="eyebrow"><span class="dot"></span>${escapeHtml(post.tag)}</div>
+        <h1>${escapeHtml(post.title)}</h1>
+        <div class="excerpt">${escapeHtml(post.excerpt)}</div>
+        <div class="meta">
+          <span class="pill">${escapeHtml(post.date)}</span>
+          <span class="pill">${escapeHtml(post.readingTime)}</span>
+        </div>
+      </div>
+      <div class="iconwrap">${icon}</div>
+    </div>
+    <div class="stripe"></div>
+  </body></html>`;
+}
+
+function blogIndexHtml(icon) {
+  return `<!doctype html><html><head><meta charset="utf-8"><style>${baseStyles}
+    .wrap { position: absolute; left: 0; right: 0; top: 150px; bottom: 44px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 96px; gap: 60px; }
+    .left { max-width: 640px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: 20px;
+      font-weight: 700; color: #5eead4; text-transform: uppercase; letter-spacing: 1.5px;
+      margin-bottom: 22px; }
+    .eyebrow .dot { width: 10px; height: 10px; border-radius: 50%; background: #34d399;
+      box-shadow: 0 0 16px #34d399; }
+    h1 { font-size: 74px; line-height: 1.05; font-weight: 800; letter-spacing: -1.6px;
+      margin-bottom: 24px; }
+    h1 b { color: #5eead4; }
+    .tagline { font-size: 26px; line-height: 1.45; color: #cbd5e1; font-weight: 500;
+      max-width: 560px; }
+    .count { margin-top: 34px; display: inline-flex; align-items: baseline; gap: 14px; }
+    .count b { font-size: 52px; font-weight: 800; color: #fff; letter-spacing: -1px; }
+    .count span { font-size: 21px; color: #94a3b8; font-weight: 600; }
+    .iconwrap { flex: 0 0 auto; width: 260px; height: 260px; border-radius: 56px;
+      background: linear-gradient(160deg, rgba(255,255,255,.14), rgba(255,255,255,.03));
+      border: 1px solid rgba(255,255,255,.14); display: flex; align-items: center;
+      justify-content: center; box-shadow: 0 40px 90px rgba(0,0,0,.5); }
+    .iconwrap svg { width: 150px; height: 150px; }
+  </style></head><body>
+    <div class="grid-bg"></div>
+    <div class="brandbar">
+      <div class="logo">${brandLogo}</div>
+      <div class="name"><b>SaveApp</b>.cc<small>Blog</small></div>
+    </div>
+    <div class="wrap">
+      <div class="left">
+        <div class="eyebrow"><span class="dot"></span>Blog</div>
+        <h1>Bài viết</h1>
+        <div class="tagline">Cập nhật tiến độ, thông báo thử nghiệm và câu chuyện sản phẩm.</div>
+        <div class="count"><b>${posts.length}</b><span>bài viết</span></div>
+      </div>
+      <div class="iconwrap">${icon}</div>
+    </div>
+    <div class="stripe"></div>
+  </body></html>`;
+}
+
 async function shoot(html, outPath) {
   const htmlPath = join(tmpDir, 'card.html');
   await writeFile(htmlPath, html);
@@ -203,9 +305,16 @@ await rm(tmpDir, { recursive: true, force: true });
 await mkdir(tmpDir, { recursive: true });
 await mkdir(outDir, { recursive: true });
 
+const brandLogo = await fileSvg('favicon.svg');
+
 await shoot(await homeCardHtml(), join(outDir, 'home.png'));
 for (const app of apps) {
   await shoot(appCardHtml(app, await iconSvg(app)), join(outDir, `${app.slug}.png`));
+}
+
+await shoot(blogIndexHtml(brandLogo), join(outDir, 'blog.png'));
+for (const post of posts) {
+  await shoot(postCardHtml(post, await fileSvg(post.cover)), join(outDir, `blog-${post.slug}.png`));
 }
 
 await rm(tmpDir, { recursive: true, force: true });

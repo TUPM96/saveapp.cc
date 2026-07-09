@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { apps, site } from './data/apps';
+import { posts } from './data/posts';
 
 const query = ref('');
 const activeStatus = ref('Tất cả');
@@ -20,6 +21,18 @@ const currentSlug = computed(() => {
 
 const selectedApp = computed(() => apps.find((app) => app.slug === currentSlug.value));
 const isHome = computed(() => currentPath.value === '/');
+const isBlog = computed(() => currentPath.value === '/blog');
+
+const currentPostSlug = computed(() => {
+  const match = currentPath.value.match(/^\/blog\/([^/]+)$/);
+  return match ? decodeURIComponent(match[1]) : '';
+});
+const selectedPost = computed(() => posts.find((post) => post.slug === currentPostSlug.value));
+const otherPosts = computed(() =>
+  selectedPost.value
+    ? posts.filter((post) => post.slug !== selectedPost.value.slug).slice(0, 2)
+    : []
+);
 
 const platformCount = computed(
   () => new Set(apps.flatMap((app) => app.platforms)).size
@@ -102,6 +115,10 @@ function appPath(app) {
   return `/apps/${app.slug}`;
 }
 
+function postPath(post) {
+  return `/blog/${post.slug}`;
+}
+
 const numberFormatter = new Intl.NumberFormat('vi-VN');
 
 function installLabel(app) {
@@ -137,6 +154,31 @@ function pageMeta() {
       imageAlt: `${app.name} - ${app.tagline}`,
       robots: 'index, follow',
       schema: softwareSchema(app)
+    };
+  }
+
+  if (selectedPost.value) {
+    const post = selectedPost.value;
+    return {
+      title: `${post.title} | ${site.name}`,
+      description: post.excerpt,
+      url: `${siteUrl}${postPath(post)}`,
+      image: `${siteUrl}/og/blog-${post.slug}.png`,
+      imageAlt: post.title,
+      robots: 'index, follow',
+      schema: articleSchema(post)
+    };
+  }
+
+  if (isBlog.value) {
+    return {
+      title: `Bài viết | ${site.name}`,
+      description: 'Cập nhật tiến độ, thông báo thử nghiệm và câu chuyện sản phẩm của ' + site.owner + '.',
+      url: `${siteUrl}/blog`,
+      image: `${siteUrl}/og/blog.png`,
+      imageAlt: `Bài viết | ${site.name}`,
+      robots: 'index, follow',
+      schema: blogSchema()
     };
   }
 
@@ -205,6 +247,36 @@ function webPageSchema() {
   };
 }
 
+function articleSchema(post) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt,
+    url: `${siteUrl}${postPath(post)}`,
+    image: `${siteUrl}/og/blog-${post.slug}.png`,
+    datePublished: post.dateMachine,
+    dateModified: post.dateMachine,
+    author: { '@type': 'Organization', name: site.owner, url: siteUrl },
+    publisher: { '@type': 'Organization', name: site.owner, url: siteUrl }
+  };
+}
+
+function blogSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: `Bài viết | ${site.name}`,
+    url: `${siteUrl}/blog`,
+    blogPost: posts.map((post) => ({
+      '@type': 'BlogPosting',
+      headline: post.title,
+      url: `${siteUrl}${postPath(post)}`,
+      datePublished: post.dateMachine
+    }))
+  };
+}
+
 function setMeta(selector, attribute, value) {
   let tag = document.head.querySelector(selector);
 
@@ -265,6 +337,7 @@ watch([currentPath, selectedApp], updateSeo);
       </a>
       <nav class="site-nav" aria-label="Điều hướng chính">
         <a :href="withBase('/')" @click="onInternalLink($event, '/')">Ứng dụng</a>
+        <a :href="withBase('/blog')" @click="onInternalLink($event, '/blog')">Bài viết</a>
         <a href="mailto:support@saveapp.cc">Liên hệ</a>
       </nav>
     </header>
@@ -478,11 +551,101 @@ watch([currentPath, selectedApp], updateSeo);
         </div>
       </section>
 
+      <section v-else-if="isBlog" class="blog" aria-labelledby="blog-title">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Blog</p>
+            <h1 id="blog-title">Bài viết</h1>
+            <p class="blog-intro">
+              Cập nhật tiến độ, thông báo thử nghiệm và câu chuyện phía sau các sản phẩm.
+            </p>
+          </div>
+        </div>
+
+        <div class="post-grid">
+          <article
+            v-for="post in posts"
+            :key="post.slug"
+            class="post-card"
+            tabindex="0"
+            role="link"
+            :aria-label="`Đọc: ${post.title}`"
+            @click="navigate(postPath(post))"
+            @keydown.enter="navigate(postPath(post))"
+          >
+            <div class="post-card-media">
+              <img :src="assetUrl(post.cover)" alt="" />
+            </div>
+            <div class="post-card-body">
+              <div class="post-meta">
+                <span class="post-tag">{{ post.tag }}</span>
+                <time :datetime="post.dateMachine">{{ post.date }}</time>
+              </div>
+              <h2>{{ post.title }}</h2>
+              <p>{{ post.excerpt }}</p>
+              <span class="card-link">
+                Đọc bài
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 12h13m-5-5 5 5-5 5" />
+                </svg>
+              </span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <article v-else-if="selectedPost" class="post" aria-labelledby="post-title">
+        <a class="back-link" :href="withBase('/blog')" @click="onInternalLink($event, '/blog')">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 12H6m5 5-5-5 5-5" />
+          </svg>
+          Tất cả bài viết
+        </a>
+
+        <header class="post-header">
+          <div class="post-meta">
+            <span class="post-tag">{{ selectedPost.tag }}</span>
+            <time :datetime="selectedPost.dateMachine">{{ selectedPost.date }}</time>
+            <span>{{ selectedPost.readingTime }}</span>
+          </div>
+          <h1 id="post-title">{{ selectedPost.title }}</h1>
+          <p class="post-lead">{{ selectedPost.excerpt }}</p>
+        </header>
+
+        <div class="post-body">
+          <template v-for="(block, index) in selectedPost.body" :key="index">
+            <h2 v-if="block.type === 'h2'">{{ block.text }}</h2>
+            <ul v-else-if="block.type === 'ul'">
+              <li v-for="(item, i) in block.items" :key="i">{{ item }}</li>
+            </ul>
+            <p v-else>{{ block.text }}</p>
+          </template>
+        </div>
+
+        <footer v-if="otherPosts.length" class="post-more">
+          <h2>Bài viết khác</h2>
+          <div class="post-more-list">
+            <a
+              v-for="post in otherPosts"
+              :key="post.slug"
+              :href="withBase(postPath(post))"
+              @click="onInternalLink($event, postPath(post))"
+            >
+              <img :src="assetUrl(post.cover)" alt="" />
+              <span>
+                <strong>{{ post.title }}</strong>
+                <small>{{ post.tag }} · {{ post.date }}</small>
+              </span>
+            </a>
+          </div>
+        </footer>
+      </article>
+
       <section v-else class="not-found" aria-labelledby="not-found-title">
-        <h1 id="not-found-title">Không tìm thấy ứng dụng</h1>
-        <p>Ứng dụng này chưa có trong danh sách hiện tại của SaveApp.cc.</p>
+        <h1 id="not-found-title">Không tìm thấy nội dung</h1>
+        <p>Trang này chưa có trong danh sách hiện tại của SaveApp.cc.</p>
         <a class="primary-link" :href="withBase('/')" @click="onInternalLink($event, '/')">
-          Về danh sách app
+          Về trang chủ
         </a>
       </section>
     </main>
@@ -498,6 +661,7 @@ watch([currentPath, selectedApp], updateSeo);
         </a>
         <nav class="footer-links" aria-label="Liên kết chân trang">
           <a :href="withBase('/')" @click="onInternalLink($event, '/')">Ứng dụng</a>
+          <a :href="withBase('/blog')" @click="onInternalLink($event, '/blog')">Bài viết</a>
           <a :href="`mailto:${site.email}`">{{ site.email }}</a>
           <span>© {{ currentYear }} {{ site.owner }}</span>
         </nav>
