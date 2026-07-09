@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { apps, site } from './data/apps';
 import { posts } from './data/posts';
 
@@ -33,6 +33,7 @@ const otherPosts = computed(() =>
     ? posts.filter((post) => post.slug !== selectedPost.value.slug).slice(0, 2)
     : []
 );
+const latestPosts = computed(() => posts.slice(0, 3));
 
 const platformCount = computed(
   () => new Set(apps.flatMap((app) => app.platforms)).size
@@ -313,16 +314,57 @@ function updateSeo() {
   }
 }
 
+let revealObserver = null;
+
+function refreshReveal() {
+  if (!revealObserver) return;
+  nextTick(() => {
+    document.querySelectorAll('[data-reveal]:not(.in)').forEach((el) => revealObserver.observe(el));
+  });
+}
+
+function setupReveal() {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !('IntersectionObserver' in window)) return;
+
+  document.documentElement.classList.add('reveal-ready');
+  revealObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          revealObserver.unobserve(entry.target);
+        }
+      }
+    },
+    { rootMargin: '0px 0px -6% 0px', threshold: 0.06 }
+  );
+  refreshReveal();
+
+  // Lưới an toàn: lộ ngay các phần tử đã ở trên/khỏi viewport (vd cuộn phục hồi)
+  window.setTimeout(() => {
+    document.querySelectorAll('[data-reveal]:not(.in)').forEach((el) => {
+      if (el.getBoundingClientRect().top < window.innerHeight * 0.4) {
+        el.classList.add('in');
+      }
+    });
+  }, 1400);
+}
+
 onMounted(() => {
   window.addEventListener('popstate', onPopState);
   updateSeo();
+  setupReveal();
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('popstate', onPopState);
 });
 
-watch([currentPath, selectedApp], updateSeo);
+watch([currentPath, selectedApp, selectedPost], () => {
+  updateSeo();
+  refreshReveal();
+});
 </script>
 
 <template>
@@ -344,7 +386,7 @@ watch([currentPath, selectedApp], updateSeo);
 
     <main>
       <div v-if="isHome" class="home">
-        <section class="hero" aria-labelledby="hero-title">
+        <section class="hero" data-reveal aria-labelledby="hero-title">
           <div class="hero-copy">
             <p class="eyebrow">{{ site.owner }}</p>
             <h1 id="hero-title">Các ứng dụng <span>đang phát triển</span></h1>
@@ -382,7 +424,7 @@ watch([currentPath, selectedApp], updateSeo);
           </div>
         </section>
 
-        <section id="apps" class="catalog" aria-labelledby="catalog-title">
+        <section id="apps" class="catalog" data-reveal aria-labelledby="catalog-title">
           <div class="section-head">
             <div>
               <p class="eyebrow">Danh mục</p>
@@ -443,7 +485,52 @@ watch([currentPath, selectedApp], updateSeo);
           </p>
         </section>
 
-        <section class="about" aria-labelledby="about-title">
+        <section class="latest" data-reveal aria-labelledby="latest-title">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Blog</p>
+              <h2 id="latest-title">Bài viết mới nhất</h2>
+            </div>
+            <a class="see-all" :href="withBase('/blog')" @click="onInternalLink($event, '/blog')">
+              Xem tất cả
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h13m-5-5 5 5-5 5" />
+              </svg>
+            </a>
+          </div>
+          <div class="post-grid">
+            <article
+              v-for="post in latestPosts"
+              :key="post.slug"
+              class="post-card"
+              tabindex="0"
+              role="link"
+              :aria-label="`Đọc: ${post.title}`"
+              @click="navigate(postPath(post))"
+              @keydown.enter="navigate(postPath(post))"
+            >
+              <div class="post-card-media">
+                <img :src="assetUrl(post.cover)" alt="" />
+              </div>
+              <div class="post-card-body">
+                <div class="post-meta">
+                  <span class="post-tag">{{ post.tag }}</span>
+                  <time :datetime="post.dateMachine">{{ post.date }}</time>
+                </div>
+                <h2>{{ post.title }}</h2>
+                <p>{{ post.excerpt }}</p>
+                <span class="card-link">
+                  Đọc bài
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h13m-5-5 5 5-5 5" />
+                  </svg>
+                </span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="about" data-reveal aria-labelledby="about-title">
           <div class="about-inner">
             <p class="eyebrow">Về chúng tôi</p>
             <h2 id="about-title">{{ site.owner }}</h2>
@@ -461,7 +548,7 @@ watch([currentPath, selectedApp], updateSeo);
           Danh sách app
         </a>
 
-        <div class="detail-hero">
+        <div class="detail-hero" data-reveal>
           <div class="detail-title">
             <img class="detail-icon" :src="assetUrl(selectedApp.icon)" :alt="`${selectedApp.name} icon`" />
             <div>
@@ -493,7 +580,7 @@ watch([currentPath, selectedApp], updateSeo);
           </div>
         </div>
 
-        <div class="detail-grid">
+        <div class="detail-grid" data-reveal>
           <section class="detail-panel app-summary">
             <h2>Tổng quan</h2>
             <p>{{ selectedApp.description }}</p>
@@ -551,7 +638,7 @@ watch([currentPath, selectedApp], updateSeo);
         </div>
       </section>
 
-      <section v-else-if="isBlog" class="blog" aria-labelledby="blog-title">
+      <section v-else-if="isBlog" class="blog" data-reveal aria-labelledby="blog-title">
         <div class="section-head">
           <div>
             <p class="eyebrow">Blog</p>
