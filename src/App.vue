@@ -395,6 +395,10 @@ watch([currentPath, selectedApp], updateSeo);
               <p class="eyebrow">{{ selectedApp.category }}</p>
               <h1 id="detail-title">{{ selectedApp.name }}</h1>
               <p>{{ selectedApp.tagline }}</p>
+              <div class="detail-badges">
+                <span class="status-pill" :class="selectedApp.statusTone">{{ selectedApp.status }}</span>
+                <span class="detail-updated">Cập nhật {{ selectedApp.updatedAt }}</span>
+              </div>
             </div>
           </div>
 

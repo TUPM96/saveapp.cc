@@ -471,30 +471,58 @@ svg {
 
 .detail-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
   gap: 28px;
   align-items: center;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: clamp(20px, 5vw, 36px);
-  background: var(--hero-tint), var(--surface);
+  border-radius: 24px;
+  padding: clamp(24px, 5vw, 44px);
+  color: #f8fafc;
+  background:
+    radial-gradient(700px 400px at 88% -20%, rgba(45, 212, 191, 0.26), transparent 60%),
+    radial-gradient(600px 500px at 0% 130%, rgba(190, 24, 93, 0.22), transparent 55%),
+    linear-gradient(135deg, #0b1120 0%, #101a30 52%, #0b1428 100%);
   box-shadow: var(--shadow);
+}
+
+.detail-hero .eyebrow {
+  color: #5eead4;
 }
 
 .detail-title {
   display: flex;
-  gap: 18px;
+  gap: 20px;
   align-items: center;
   min-width: 0;
 }
 
 .detail-icon {
-  width: 84px;
-  height: 84px;
+  width: 96px;
+  height: 96px;
+  border-radius: 22px;
 }
 
 .detail-title h1 {
+  color: #ffffff;
   margin-bottom: 10px;
+}
+
+.detail-title p:not(.eyebrow) {
+  color: #cbd5e1;
+}
+
+.detail-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.detail-updated {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .store-actions {
@@ -504,8 +532,8 @@ svg {
 
 .store-button,
 .primary-link {
-  min-height: 50px;
-  border-radius: 8px;
+  min-height: 52px;
+  border-radius: 12px;
   border: 1px solid rgba(15, 118, 110, 0.22);
   background: #0f766e;
   color: #ffffff;
@@ -534,10 +562,10 @@ svg {
 }
 
 .store-empty {
-  border: 1px dashed color-mix(in srgb, var(--teal-accent) 40%, transparent);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--surface) 82%, transparent);
-  color: var(--teal-accent);
+  border: 1px dashed rgba(255, 255, 255, 0.28);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #5eead4;
   font-weight: 760;
   padding: 18px;
 }
@@ -551,9 +579,10 @@ svg {
 
 .detail-panel {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 18px;
   background: var(--surface);
-  padding: 22px;
+  box-shadow: var(--shadow);
+  padding: 24px;
 }
 
 .platform-list {
