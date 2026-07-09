@@ -21,6 +21,14 @@ const currentSlug = computed(() => {
 const selectedApp = computed(() => apps.find((app) => app.slug === currentSlug.value));
 const isHome = computed(() => currentPath.value === '/');
 
+const platformCount = computed(
+  () => new Set(apps.flatMap((app) => app.platforms)).size
+);
+const storeCount = computed(
+  () => apps.filter((app) => app.storeLinks.length > 0).length
+);
+const heroApps = computed(() => apps.slice(0, 6));
+
 const filteredApps = computed(() => {
   const search = query.value.trim().toLowerCase();
 
@@ -262,97 +270,115 @@ watch([currentPath, selectedApp], updateSeo);
     </header>
 
     <main>
-      <section v-if="isHome" class="catalog" aria-labelledby="catalog-title">
-        <div class="catalog-head">
-          <div>
-            <p class="eyebrow">Danh sách ứng dụng</p>
-            <h1 id="catalog-title">Các app đang phát triển</h1>
-            <p>
-              Tổng hợp trạng thái phát hành, nền tảng hỗ trợ và đường dẫn store cho từng sản phẩm.
+      <div v-if="isHome" class="home">
+        <section class="hero" aria-labelledby="hero-title">
+          <div class="hero-copy">
+            <p class="eyebrow">{{ site.owner }}</p>
+            <h1 id="hero-title">Các ứng dụng <span>đang phát triển</span></h1>
+            <p class="hero-sub">
+              Nơi tổng hợp sản phẩm của {{ site.owner }} — trạng thái phát hành, nền tảng
+              hỗ trợ và liên kết tải trên store cho từng ứng dụng.
             </p>
-          </div>
-          <div class="catalog-stats" aria-label="Tổng quan danh sách app">
-            <span>{{ apps.length }}</span>
-            <small>ứng dụng</small>
-          </div>
-        </div>
-
-        <div class="toolbar" aria-label="Bộ lọc ứng dụng">
-          <label class="search-box">
-            <span>Tìm kiếm</span>
-            <input v-model="query" type="search" placeholder="Tên app, package, danh mục" />
-          </label>
-
-          <div class="status-tabs" role="tablist" aria-label="Lọc theo trạng thái">
-            <button
-              v-for="status in statusFilters"
-              :key="status"
-              type="button"
-              :class="{ active: activeStatus === status }"
-              @click="activeStatus = status"
-            >
-              {{ status }}
-            </button>
-          </div>
-        </div>
-
-        <div class="app-table" role="table" aria-label="Danh sách ứng dụng">
-          <div class="table-head" role="row">
-            <span role="columnheader">Ứng dụng</span>
-            <span role="columnheader">Người dùng</span>
-            <span role="columnheader">Trạng thái</span>
-            <span role="columnheader">Cập nhật trạng thái</span>
-            <span role="columnheader">Cập nhật lần cuối</span>
-            <span role="columnheader">Chi tiết</span>
-          </div>
-
-          <article
-            v-for="app in filteredApps"
-            :key="app.slug"
-            class="app-row"
-            role="row"
-            tabindex="0"
-            @click="navigate(appPath(app))"
-            @keydown.enter="navigate(appPath(app))"
-          >
-            <div class="app-cell app-info" role="cell">
-              <img class="app-icon" :src="assetUrl(app.icon)" :alt="`${app.name} icon`" />
+            <div class="hero-cta">
+              <a class="btn-primary" :href="withBase('/#apps')" @click="onInternalLink($event, '/')">
+                Xem ứng dụng
+              </a>
+              <a class="btn-ghost" :href="`mailto:${site.email}`">Liên hệ hợp tác</a>
+            </div>
+            <dl class="hero-stats">
               <div>
-                <h2>{{ app.name }}</h2>
-                <p>{{ app.packageName }}</p>
+                <dt>{{ apps.length }}</dt>
+                <dd>ứng dụng</dd>
+              </div>
+              <div>
+                <dt>{{ platformCount }}</dt>
+                <dd>nền tảng</dd>
+              </div>
+              <div>
+                <dt>{{ storeCount }}</dt>
+                <dd>đã lên store</dd>
+              </div>
+            </dl>
+          </div>
+          <div class="hero-visual" aria-hidden="true">
+            <div class="hero-grid">
+              <div v-for="app in heroApps" :key="app.slug" class="hero-tile">
+                <img :src="assetUrl(app.icon)" :alt="`${app.name} icon`" />
               </div>
             </div>
-            <div class="app-cell metric" :class="{ 'metric-empty': app.installCount === 0 }" role="cell">
-              <span>{{ installLabel(app) }}</span>
-            </div>
-            <div class="app-cell" role="cell">
-              <span class="status-pill" :class="app.statusTone">{{ app.status }}</span>
-            </div>
-            <div class="app-cell" role="cell">
-              <span>{{ app.releaseChannel }}</span>
-            </div>
-            <div class="app-cell" role="cell">
-              <time :datetime="app.updatedAtMachine">{{ app.updatedAt }}</time>
-            </div>
-            <div class="app-cell row-action-cell" role="cell">
-              <a
-                class="row-action"
-                :href="withBase(appPath(app))"
-                :aria-label="`Xem chi tiết ${app.name}`"
-                @click.stop="onInternalLink($event, appPath(app))"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M5 12h13m-5-5 5 5-5 5" />
-                </svg>
-              </a>
-            </div>
-          </article>
-        </div>
+          </div>
+        </section>
 
-        <p v-if="filteredApps.length === 0" class="empty-state">
-          Không có ứng dụng phù hợp với bộ lọc hiện tại.
-        </p>
-      </section>
+        <section id="apps" class="catalog" aria-labelledby="catalog-title">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Danh mục</p>
+              <h2 id="catalog-title">Danh sách ứng dụng</h2>
+            </div>
+            <div class="toolbar" aria-label="Bộ lọc ứng dụng">
+              <label class="search-box">
+                <input v-model="query" type="search" placeholder="Tìm tên app, package, danh mục…" />
+              </label>
+              <div class="status-tabs" role="tablist" aria-label="Lọc theo trạng thái">
+                <button
+                  v-for="status in statusFilters"
+                  :key="status"
+                  type="button"
+                  :class="{ active: activeStatus === status }"
+                  @click="activeStatus = status"
+                >
+                  {{ status }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-grid">
+            <article
+              v-for="app in filteredApps"
+              :key="app.slug"
+              class="app-card"
+              tabindex="0"
+              role="link"
+              :aria-label="`Xem chi tiết ${app.name}`"
+              @click="navigate(appPath(app))"
+              @keydown.enter="navigate(appPath(app))"
+            >
+              <div class="card-top">
+                <img class="app-icon" :src="assetUrl(app.icon)" :alt="`${app.name} icon`" />
+                <span class="status-pill" :class="app.statusTone">{{ app.status }}</span>
+              </div>
+              <p class="card-cat">{{ app.category }}</p>
+              <h3>{{ app.name }}</h3>
+              <p class="card-tagline">{{ app.tagline }}</p>
+              <div class="card-foot">
+                <div class="card-platforms">
+                  <span v-for="platform in app.platforms" :key="platform">{{ platform }}</span>
+                </div>
+                <span class="card-link">
+                  Chi tiết
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h13m-5-5 5 5-5 5" />
+                  </svg>
+                </span>
+              </div>
+            </article>
+          </div>
+
+          <p v-if="filteredApps.length === 0" class="empty-state">
+            Không có ứng dụng phù hợp với bộ lọc hiện tại.
+          </p>
+        </section>
+
+        <section class="about" aria-labelledby="about-title">
+          <div class="about-inner">
+            <p class="eyebrow">Về chúng tôi</p>
+            <h2 id="about-title">{{ site.owner }}</h2>
+            <p>{{ site.description }}</p>
+            <a class="btn-primary" :href="`mailto:${site.email}`">Liên hệ: {{ site.email }}</a>
+          </div>
+        </section>
+      </div>
 
       <section v-else-if="selectedApp" class="detail" aria-labelledby="detail-title">
         <a class="back-link" :href="withBase('/')" @click="onInternalLink($event, '/')">
